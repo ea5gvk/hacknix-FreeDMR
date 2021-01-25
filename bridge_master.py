@@ -1145,7 +1145,16 @@ class routerOBP(OPENBRIDGE):
                     'CONTENTION':False,
                     'RFS':       _rf_src,
                     'TGID':      _dst_id,
+                    '1STSOURCE': True
                 }
+
+            else:
+                for system in systems:
+                    if _stream_id in systems[system] and systems[system]['1STSOURCE']:
+                        if not self.STATUS['LOOPLOG']:
+                            logger.debug("(%s) Loopcontrol - system %s is first system for this stream, disgarding packet",self._system, system)
+                        self.STATUS['LOOPLOG'] = True
+                        return
                 
 
                 # If we can, use the LC from the voice header as to keep all options intact
