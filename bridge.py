@@ -280,6 +280,19 @@ class routerOBP(OPENBRIDGE):
                                         if CONFIG['REPORTS']['REPORT']:
                                             systems[_target['SYSTEM']]._report.send_bridgeEvent('GROUP VOICE,START,TX,{},{},{},{},{},{}'.format(_target['SYSTEM'], int_id(_stream_id), int_id(_peer_id), int_id(_rf_src), _target['TS'], int_id(_target['TGID'])).encode(encoding='utf-8', errors='ignore'))
 
+                                    else:
+                                        
+                                        #Loop Control
+                                        for system in systems:
+                                            if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
+                                                continue
+                                            if _stream_id in systems[system].STATUS and systems[system].STATUS[_stream_id]['START'] < self.STATUS[_stream_id]['START'] and self.STATUS[_stream_id]['TGID'] == _dst_id:
+                                                if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
+                                                    logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
+                                                self.STATUS[_stream_id]['LOOPLOG'] = True
+                                                self.STATUS[_stream_id]['LAST'] = pkt_time
+                                                return
+
                                     # Record the time of this packet so we can later identify a stale stream
                                     _target_status[_stream_id]['LAST'] = pkt_time
                                     # Clear the TS bit -- all OpenBridge streams are effectively on TS1

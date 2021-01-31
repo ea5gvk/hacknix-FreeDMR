@@ -1165,6 +1165,8 @@ class routerOBP(OPENBRIDGE):
                     self._report.send_bridgeEvent('GROUP VOICE,START,RX,{},{},{},{},{},{}'.format(self._system, int_id(_stream_id), int_id(_peer_id), int_id(_rf_src), _slot, int_id(_dst_id)).encode(encoding='utf-8', errors='ignore'))
 
             else:
+                
+                #Loop Control
                 for system in systems:
                     if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
                         continue
