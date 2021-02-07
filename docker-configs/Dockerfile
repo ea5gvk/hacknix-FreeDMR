@@ -1,6 +1,6 @@
 FROM python:3.7-alpine
 
-COPY entrypoint-base /entrypoint
+COPY entrypoint /entrypoint
 
 RUN adduser -D -u 54000 radio && \
         apk update && \
