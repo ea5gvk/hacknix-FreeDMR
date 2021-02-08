@@ -1,6 +1,6 @@
 voiceMap = {
     'en_GB': {
-                'to': '2'
+                'to': '2',
     },
     
     'es_ES': {
