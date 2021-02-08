@@ -56,6 +56,8 @@ from mk_voice import pkt_gen
 
 #Read voices
 from read_ambe import readAMBE
+#Remap some words for certain languages
+from i8n_voice_map import voiceMap
 
 #MySQL
 from mysql_config import useMYSQL
@@ -441,7 +443,7 @@ def disconnectedVoice(system):
         _say.append(words['silence'])
         _say.append(words['linkedto'])
         _say.append(words['silence'])
-        #_say.append(words['2'])
+        _say.append(words['to'])
         _say.append(words['silence'])
         _say.append(words['silence']) 
         
@@ -1469,7 +1471,7 @@ class routerHBP(HBSYSTEM):
                                         _say.append(words['silence'])
                                         _say.append(words['linkedto'])
                                         _say.append(words['silence'])
-                                       # _say.append(words['2'])
+                                        _say.append(words['to'])
                                         _say.append(words['silence'])
                                         _say.append(words['silence']) 
                                         
@@ -1489,7 +1491,7 @@ class routerHBP(HBSYSTEM):
                     _say.append(words['silence'])
                     _say.append(words['linkedto'])
                     _say.append(words['silence'])
-                   # _say.append(words['2'])
+                    _say.append(words['to'])
                     _say.append(words['silence'])
                     _say.append(words['silence'])
                     
@@ -1823,6 +1825,14 @@ if __name__ == '__main__':
     #global words
     words = AMBEobj.readfiles()
     logger.info('(AMBE) Read %s words into voice dict',len(words) - 1)
+    
+    #Remap words for internationalisation
+    if CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'] in voiceMap:
+        logger.info('(AMBE) i8n voice map entry for language %s',CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'])
+        _map = voiceMap[CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE']]
+        for _mapword in _map:
+            logger.info('(AMBE) Mapping \"%s\" to \"%s\"',_mapword,_map[_mapword])
+            words[_mapword] = words.pop(_map[_mapword])
 
     # HBlink instance creation
     logger.info('(GLOBAL) HBlink \'bridge.py\' -- SYSTEM STARTING...')
