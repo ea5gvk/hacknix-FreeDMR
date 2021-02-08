@@ -7,4 +7,8 @@ voiceMap = {
                 'to': 'silence'
     }
     
+    'fr_FR': {
+                'to': 'silence'
+    }
+    
 }
