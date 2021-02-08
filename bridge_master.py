@@ -441,7 +441,7 @@ def disconnectedVoice(system):
         _say.append(words['silence'])
         _say.append(words['linkedto'])
         _say.append(words['silence'])
-        _say.append(words['2'])
+        #_say.append(words['2'])
         _say.append(words['silence'])
         _say.append(words['silence']) 
         
@@ -1469,7 +1469,7 @@ class routerHBP(HBSYSTEM):
                                         _say.append(words['silence'])
                                         _say.append(words['linkedto'])
                                         _say.append(words['silence'])
-                                        _say.append(words['2'])
+                                       # _say.append(words['2'])
                                         _say.append(words['silence'])
                                         _say.append(words['silence']) 
                                         
@@ -1489,7 +1489,7 @@ class routerHBP(HBSYSTEM):
                     _say.append(words['silence'])
                     _say.append(words['linkedto'])
                     _say.append(words['silence'])
-                    _say.append(words['2'])
+                   # _say.append(words['2'])
                     _say.append(words['silence'])
                     _say.append(words['silence'])
                     
