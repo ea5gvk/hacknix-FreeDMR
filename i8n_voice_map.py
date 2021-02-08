@@ -2,6 +2,10 @@ voiceMap = {
     'en_GB': {
                 'to': '2',
     },
+
+    'en_US:': {
+                'to': '2',
+    },
     
     'es_ES': {
                 'to': 'silence'
