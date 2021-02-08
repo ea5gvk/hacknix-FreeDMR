@@ -1835,7 +1835,7 @@ if __name__ == '__main__':
             words[_mapword] = words.pop(_map[_mapword])
 
     # HBlink instance creation
-    logger.info('(GLOBAL) HBlink \'bridge.py\' -- SYSTEM STARTING...')
+    logger.info('(GLOBAL) FreeDMR \'bridge_master.py\' -- SYSTEM STARTING...')
     
     listeningPorts = {}
     
