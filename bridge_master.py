@@ -58,10 +58,6 @@ from mk_voice import pkt_gen
 from read_ambe import readAMBE
 #Remap some words for certain languages
 from i8n_voice_map import voiceMap
-<<<<<<< HEAD
-=======
-
->>>>>>> master
 
 #MySQL
 from mysql_config import useMYSQL
@@ -1888,14 +1884,6 @@ if __name__ == '__main__':
     words = AMBEobj.readfiles()
     logger.info('(AMBE) Read %s words into voice dict',len(words) - 1)
     
-    #Remap words for internationalisation
-    if CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'] in voiceMap:
-        logger.info('(AMBE) i8n voice map entry for language %s',CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'])
-        _map = voiceMap[CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE']]
-        for _mapword in _map:
-            logger.info('(AMBE) Mapping \"%s\" to \"%s\"',_mapword,_map[_mapword])
-            words[_mapword] = words.pop(_map[_mapword])
-
     #Remap words for internationalisation
     if CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'] in voiceMap:
         logger.info('(AMBE) i8n voice map entry for language %s',CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'])
