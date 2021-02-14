@@ -1149,6 +1149,16 @@ class routerOBP(OPENBRIDGE):
                     'TGID':      _dst_id,
                 }
                 
+                for system in systems:
+                    if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
+                        continue
+                    if _stream_id in systems[system].STATUS and self.STATUS[_stream_id]['TGID'] == _dst_id:
+                       # if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
+                        logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
+                        self.STATUS[_stream_id]['LOOPLOG'] = True
+                       # self.STATUS[_stream_id]['LAST'] = pkt_time
+                        return
+                
 
                 # If we can, use the LC from the voice header as to keep all options intact
                 if _frame_type == HBPF_DATA_SYNC and _dtype_vseq == HBPF_SLT_VHEAD:
@@ -1165,6 +1175,12 @@ class routerOBP(OPENBRIDGE):
                         self._system, int_id(_stream_id), get_alias(_rf_src, subscriber_ids), int_id(_rf_src), get_alias(_peer_id, peer_ids), int_id(_peer_id), get_alias(_dst_id, talkgroup_ids), int_id(_dst_id), _slot)
                 if CONFIG['REPORTS']['REPORT']:
                     self._report.send_bridgeEvent('GROUP VOICE,START,RX,{},{},{},{},{},{}'.format(self._system, int_id(_stream_id), int_id(_peer_id), int_id(_rf_src), _slot, int_id(_dst_id)).encode(encoding='utf-8', errors='ignore'))
+
+            #else:
+                
+               # Loop Control
+
+
 
             self.STATUS[_stream_id]['LAST'] = pkt_time
             
