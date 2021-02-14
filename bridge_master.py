@@ -58,6 +58,10 @@ from mk_voice import pkt_gen
 from read_ambe import readAMBE
 #Remap some words for certain languages
 from i8n_voice_map import voiceMap
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 
 #MySQL
 from mysql_config import useMYSQL
@@ -567,9 +571,30 @@ def options_config():
                 if not _options['DEFAULT_UA_TIMER'].isdigit():
                     logger.debug('(OPTIONS) %s - DEFAULT_REFLECTOR is not an integer, ignoring',_system)
                     continue
+                    
+                _tmout = int(_options['DEFAULT_UA_TIMER'])
+                
+                if int(_options['DEFAULT_UA_TIMER']) != CONFIG['SYSTEMS'][_system]['DEFAULT_UA_TIMER']:
+                    logger.debug('(OPTIONS) %s Updating DEFAULT_UA_TIMER for existing bridges.',_system)
+                    remove_bridge_system(_system)
+                    for _bridge in BRIDGES:
+                        ts1 = False 
+                        ts2 = False
+                        for i,e in enumerate(BRIDGES[_bridge]):
+                            if e['SYSTEM'] == _system and e['TS'] == 1:
+                                ts1 = True
+                            if e['SYSTEM'] == _system and e['TS'] == 2:
+                                ts2 = True
+                        if _bridge[0:1] != '#':
+                            if ts1 == False:
+                                BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 1, 'TGID': bytes_3(int(_bridge)),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [bytes_3(int(_bridge)),],'RESET': [], 'TIMER': time()})
+                            if ts2 == False:
+                                BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 2, 'TGID': bytes_3(int(_bridge)),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [bytes_3(int(_bridge)),],'RESET': [], 'TIMER': time()})
+                        else:
+                            if ts2 == False:
+                                BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 2, 'TGID': bytes_3(9),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [bytes_3(4000)],'ON': [],'RESET': [], 'TIMER': time()})
         
                 if int(_options['DEFAULT_REFLECTOR']) != CONFIG['SYSTEMS'][_system]['DEFAULT_REFLECTOR']:
-                    _tmout = int(_options['DEFAULT_UA_TIMER'])
                     if int(_options['DEFAULT_REFLECTOR']) > 0:
                         logger.debug('(OPTIONS) %s default reflector changed, updating',_system) 
                         reset_default_reflector(CONFIG['SYSTEMS'][_system]['DEFAULT_REFLECTOR'],_tmout,_system)
@@ -779,15 +804,52 @@ def mysql_config_check(SQLGETCONFIG):
                         make_static_tg(tg,2,_tmout,system)
                     
         if SQLCONFIG[system]['DEFAULT_UA_TIMER'] != CONFIG['SYSTEMS'][system]['DEFAULT_UA_TIMER']:
-            if 'OPTIONS' not in SQLCONFIG[system]:
-                logger.debug('(MYSQL) %s DEFAULT_UA_TIMER changed. Killing HBP listener. Will restart in 1 minute',system)
-                systems[system].master_dereg()
-                if systems[system]._system_maintenance is not None and systems[system]._system_maintenance.running == True:
-                    systems[system]._system_maintenance.stop()
-                    systems[system]._system_maintenance = None
+            if 'OPTIONS' not in CONFIG['SYSTEMS'][system]:
+                logger.debug('(MYSQL) %s DEFAULT_UA_TIMER changed. Updating bridges.',system)
                 remove_bridge_system(system)
-                listeningPorts[system].stopListening()
-                SQLCONFIG[system]['ENABLED'] = False
+                for _bridge in BRIDGES:
+                    ts1 = False 
+                    ts2 = False
+                    for i,e in enumerate(BRIDGES[_bridge]):
+                        if e['SYSTEM'] == system and e['TS'] == 1:
+                            ts1 = True
+                        if e['SYSTEM'] == system and e['TS'] == 2:
+                            ts2 = True
+                    if _bridge[0:1] != '#':
+                        if ts1 == False:
+                            BRIDGES[_bridge].append({'SYSTEM': system, 'TS': 1, 'TGID': bytes_3(int(_bridge)),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [bytes_3(int(_bridge)),],'RESET': [], 'TIMER': time()})
+                        if ts2 == False:
+                            BRIDGES[_bridge].append({'SYSTEM': system, 'TS': 2, 'TGID': bytes_3(int(_bridge)),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [bytes_3(int(_bridge)),],'RESET': [], 'TIMER': time()})
+                    else:
+                        if ts2 == False:
+                            BRIDGES[_bridge].append({'SYSTEM': system, 'TS': 2, 'TGID': bytes_3(9),'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [bytes_3(4000)],'ON': [],'RESET': [], 'TIMER': time()})
+
+                
+                if SQLCONFIG[system]['DEFAULT_REFLECTOR'] > 0:
+                  #  if 'OPTIONS' not in SQLCONFIG[system]:
+                    logger.debug('(MYSQL) %s setting default reflector',system) 
+                    make_default_reflector(SQLCONFIG[system]['DEFAULT_REFLECTOR'],_tmout,system)
+            
+                if SQLCONFIG[system]['TS1_STATIC']:
+                   # if 'OPTIONS' not in SQLCONFIG[system]:
+                    logger.debug('(MYSQL) %s setting static TGs on TS1',system) 
+                    ts1 = SQLCONFIG[system]['TS1_STATIC'].split(',')
+                    for tg in ts1:
+                        if not tg:
+                            continue
+                        tg = int(tg)
+                        make_static_tg(tg,1,_tmout,system)
+                            
+                    if SQLCONFIG[system]['TS2_STATIC']:
+                        logger.debug('(MYSQL) %s setting static TGs on TS2',system) 
+                        ts2 = SQLCONFIG[system]['TS2_STATIC'].split(',')
+                        for tg in ts2:
+                            if not tg:
+                                continue
+                            tg = int(tg)
+                            make_static_tg(tg,2,_tmout,system)
+                
+
         
         if SQLCONFIG[system]['IP'] != CONFIG['SYSTEMS'][system]['IP'] and CONFIG['SYSTEMS'][system]['ENABLED'] == True:
             logger.debug('(MYSQL) %s IP binding changed on enabled system, killing HBP listener. Will restart in 1 minute',system)
@@ -832,7 +894,7 @@ def mysql_config_check(SQLGETCONFIG):
                     reset_default_reflector(CONFIG['SYSTEMS'][system]['DEFAULT_REFLECTOR'],_tmout,system)
                 
         if SQLCONFIG[system]['TS1_STATIC'] != CONFIG['SYSTEMS'][system]['TS1_STATIC']:
-            if 'OPTIONS' not in SQLCONFIG[system]:
+            if 'OPTIONS' not in CONFIG['SYSTEMS'][system]:
                 _tmout = SQLCONFIG[system]['DEFAULT_UA_TIMER']
                 logger.debug('(MYSQL) %s TS1 static TGs changed, updating',system)
                 ts1 = []
@@ -853,7 +915,7 @@ def mysql_config_check(SQLGETCONFIG):
                         make_static_tg(tg,1,_tmout,system)
                     
         if SQLCONFIG[system]['TS2_STATIC'] != CONFIG['SYSTEMS'][system]['TS2_STATIC']:
-            if 'OPTIONS' not in SQLCONFIG[system]:
+            if 'OPTIONS' not in CONFIG['SYSTEMS'][system]:
                 _tmout = SQLCONFIG[system]['DEFAULT_UA_TIMER']
                 logger.debug('(MYSQL) %s TS2 static TGs changed, updating',system)
                 ts2 = []
@@ -1826,6 +1888,14 @@ if __name__ == '__main__':
     words = AMBEobj.readfiles()
     logger.info('(AMBE) Read %s words into voice dict',len(words) - 1)
     
+    #Remap words for internationalisation
+    if CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'] in voiceMap:
+        logger.info('(AMBE) i8n voice map entry for language %s',CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'])
+        _map = voiceMap[CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE']]
+        for _mapword in _map:
+            logger.info('(AMBE) Mapping \"%s\" to \"%s\"',_mapword,_map[_mapword])
+            words[_mapword] = words.pop(_map[_mapword])
+
     #Remap words for internationalisation
     if CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'] in voiceMap:
         logger.info('(AMBE) i8n voice map entry for language %s',CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE'])
