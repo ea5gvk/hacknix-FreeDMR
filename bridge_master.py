@@ -1146,8 +1146,7 @@ class routerOBP(OPENBRIDGE):
                     'START':     pkt_time,
                     'CONTENTION':False,
                     'RFS':       _rf_src,
-                    'TGID':      _dst_id,
-                    '1ST': True
+                    'TGID':      _dst_id
                 }
 
                 # If we can, use the LC from the voice header as to keep all options intact
@@ -1172,7 +1171,7 @@ class routerOBP(OPENBRIDGE):
                 for system in systems:
                     if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
                         continue
-                    if _stream_id in systems[system].STATUS and systems[system].STATUS[_stream_id]['START'] < self.STATUS[_stream_id]['START'] and self.STATUS[_stream_id]['TGID'] == _dst_id :
+                    if _stream_id in systems[system].STATUS and systems[system].STATUS[_stream_id]['START'] <= self.STATUS[_stream_id]['START']:
                         if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                             logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
                             self.STATUS[_stream_id]['LOOPLOG'] = True
