@@ -1143,8 +1143,11 @@ class routerOBP(OPENBRIDGE):
             if (_stream_id not in self.STATUS):
                 
                 if 'LOOPHOLD' in self.STATUS:
-                    self.STATUS.pop('LOOPHOLD')
-                    logger.debug ('Avoid packet due to loophold')
+                    if self.STATUS['LOOPHOLD'] < 5:
+                        logger.debug ('Avoid packet due to loophold: %s',self.STATUS['LOOPHOLD'])
+                        self.STATUS['LOOPHOLD'] = self.STATUS['LOOPHOLD'] + 1
+                    else:
+                        self.STATUS.pop('LOOPHOLD')
                     return
                 
                 # This is a new call stream
