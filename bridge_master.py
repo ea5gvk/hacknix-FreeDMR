@@ -1186,7 +1186,7 @@ class routerOBP(OPENBRIDGE):
                         if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                             logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
                             self.STATUS[_stream_id]['LOOPLOG'] = True
-                            systems[system].STATUS['LOOPHOLD'] = True
+                            systems[system].STATUS['LOOPHOLD'] = 0
                         self.STATUS[_stream_id]['LAST'] = pkt_time
                         return
 
