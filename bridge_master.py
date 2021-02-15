@@ -1141,6 +1141,12 @@ class routerOBP(OPENBRIDGE):
         if _call_type == 'group':
             # Is this a new call stream?
             if (_stream_id not in self.STATUS):
+                
+                if ['LOOPHOLD'] in self.STATUS:
+                    self.STATUS.pop('LOOPHOLD')
+                    logger.debug ('Avoid packet due to loophold')
+                    return
+                
                 # This is a new call stream
                 self.STATUS[_stream_id] = {
                     'START':     pkt_time,
@@ -1177,6 +1183,7 @@ class routerOBP(OPENBRIDGE):
                         if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                             logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
                             self.STATUS[_stream_id]['LOOPLOG'] = True
+                            systems[system].STATUS['LOOPHOLD'] = True
                         self.STATUS[_stream_id]['LAST'] = pkt_time
                         return
 
