@@ -383,7 +383,7 @@ def stream_trimmer_loop():
                     if systems[system].STATUS[stream_id]['LAST'] < _now - 5:
                         remove_list.append(stream_id)
                 except:
-                    logger.debug("(%s) Keyerror - stream trimmer Stream ID: %s Start: %s Contention: %s RFS: %s  TGID: %s",systems[system],stream_id,systems[system].STATUS[stream_id]['START'],systems[system].STATUS[stream_id]['CONTENTION'],systems[system].STATUS[stream_id]['RFS'],int_id(systems[system].STATUS[stream_id]['TGID']))
+                    logger.debug("(%s) Keyerror - stream trimmer Stream ID: %s",system,stream_id)
                     systems[system].STATUS[stream_id]['LAST'] = _now
                     continue
                 
@@ -521,7 +521,7 @@ def ident():
                     
                     _stream_id = pkt[16:20]
                     _pkt_time = time()
-                    reactor.callFromThread(sendVoicePacket,self,pkt,_source_id,_all_call,_slot)
+                    reactor.callFromThread(sendVoicePacket,systems[system],pkt,_source_id,_all_call,_slot)
 
 def options_config():
     logger.debug('(OPTIONS) Running options parser')
@@ -1142,14 +1142,6 @@ class routerOBP(OPENBRIDGE):
             # Is this a new call stream?
             if (_stream_id not in self.STATUS):
                 
-                if 'LOOPHOLD' in self.STATUS:
-                    if self.STATUS['LOOPHOLD'] < 5:
-                        logger.debug ('Avoid packet due to loophold: %s',self.STATUS['LOOPHOLD'])
-                        self.STATUS['LOOPHOLD'] = self.STATUS['LOOPHOLD'] + 1
-                    else:
-                        self.STATUS.pop('LOOPHOLD')
-                    return
-                
                 # This is a new call stream
                 self.STATUS[_stream_id] = {
                     'START':     pkt_time,
@@ -1178,6 +1170,15 @@ class routerOBP(OPENBRIDGE):
             else:
                 
                # Loop Control
+               
+                if 'LOOPHOLD' in self.STATUS[_stream_id]:
+                    if self.STATUS[_stream_id]['LOOPHOLD'] < 5:
+                        logger.debug ('(%s) Avoid packet due to loophold: %s',self._system,self.STATUS[_stream_id]['LOOPHOLD'])
+                        self.STATUS[_stream_id]['LOOPHOLD'] = self.STATUS[_stream_id]['LOOPHOLD'] + 1
+                    else:
+                        self.STATUS.pop('LOOPHOLD')
+                    return
+               
                 for system in systems:
                     if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
                         continue
@@ -1186,7 +1187,7 @@ class routerOBP(OPENBRIDGE):
                         if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                             logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
                             self.STATUS[_stream_id]['LOOPLOG'] = True
-                            systems[system].STATUS['LOOPHOLD'] = 0
+                            systems[system].STATUS[_stream_id]['LOOPHOLD'] = 0
                         self.STATUS[_stream_id]['LAST'] = pkt_time
                         return
 
@@ -1903,7 +1904,7 @@ if __name__ == '__main__':
         _map = voiceMap[CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE']]
         for _mapword in _map:
             logger.info('(AMBE) Mapping \"%s\" to \"%s\"',_mapword,_map[_mapword])
-            words[_mapword] = words.pop(_map[_mapword])
+            words[_mapword] = _map[_mapword]
 
     # HBlink instance creation
     logger.info('(GLOBAL) FreeDMR \'bridge_master.py\' -- SYSTEM STARTING...')
