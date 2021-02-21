@@ -1152,8 +1152,7 @@ class routerOBP(OPENBRIDGE):
                     'START':     pkt_time,
                     'CONTENTION':False,
                     'RFS':       _rf_src,
-                    'TGID':      _dst_id,
-                    '1ST': True
+                    'TGID':      _dst_id
                 }
 
                 # If we can, use the LC from the voice header as to keep all options intact
@@ -1174,19 +1173,6 @@ class routerOBP(OPENBRIDGE):
 
             else:
                 
-               # Loop Control
-               
-                #if 'LOOPHOLD' in self.STATUS[_stream_id]:
-                    #if self.STATUS[_stream_id]['LOOPHOLD'] < 5:
-                        #logger.debug ('(%s) Avoid packet due to loophold: %s',self._system,self.STATUS[_stream_id]['LOOPHOLD'])
-                        #self.STATUS[_stream_id]['LOOPHOLD'] = self.STATUS[_stream_id]['LOOPHOLD'] + 1
-                    #else:
-                        #try:
-                            #self.STATUS.pop('LOOPHOLD')
-                        #except:
-                            #pass
-                    #return
-               
                 for system in systems:
                     if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE' or system  == self._system:
                         continue
@@ -1195,7 +1181,6 @@ class routerOBP(OPENBRIDGE):
                         if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                             logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
                             self.STATUS[_stream_id]['LOOPLOG'] = True
-                            self.STATUS[_stream_id]['LOOPHOLD'] = 0
                         self.STATUS[_stream_id]['LAST'] = pkt_time
                         return
 
@@ -1227,10 +1212,6 @@ class routerOBP(OPENBRIDGE):
                         self._system, int_id(_stream_id), get_alias(_rf_src, subscriber_ids), int_id(_rf_src), get_alias(_peer_id, peer_ids), int_id(_peer_id), get_alias(_dst_id, talkgroup_ids), int_id(_dst_id), _slot, call_duration)
                 if CONFIG['REPORTS']['REPORT']:
                    self._report.send_bridgeEvent('GROUP VOICE,END,RX,{},{},{},{},{},{},{:.2f}'.format(self._system, int_id(_stream_id), int_id(_peer_id), int_id(_rf_src), _slot, int_id(_dst_id), call_duration).encode(encoding='utf-8', errors='ignore'))
-                #removed = self.STATUS.pop(_stream_id)
-                #logger.debug('(%s) OpenBridge sourced call stream end, remove terminated Stream ID: %s', self._system, int_id(_stream_id))
-                #if not removed:
-                    #selflogger.error('(%s) *CALL END*   STREAM ID: %s NOT IN LIST -- THIS IS A REAL PROBLEM', self._system, int_id(_stream_id))
                 
                 #Reset sequence number 
                 self._lastSeq = False
