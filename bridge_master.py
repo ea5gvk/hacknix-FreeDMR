@@ -526,6 +526,8 @@ def ident():
 def options_config():
     logger.debug('(OPTIONS) Running options parser')
     for _system in CONFIG['SYSTEMS']:
+        if CONFIG['SYSTEMS'][_system]['MODE'] != 'MASTER':
+            continue
         if CONFIG['SYSTEMS'][_system]['ENABLED'] == True:
             if 'OPTIONS' in CONFIG['SYSTEMS'][_system]:
                 _options = {}
@@ -1451,7 +1453,7 @@ class routerHBP(HBSYSTEM):
         _int_dst_id = int_id(_dst_id)
         
         #Handle private calls (for reflectors)
-        if _call_type == 'unit' and _slot == 2:
+        if _call_type == 'unit':
             if (_stream_id != self.STATUS[_slot]['RX_STREAM_ID']):
                 logger.warning('(%s) Reflector: Private call from %s to %s',self._system, int_id(_rf_src), _int_dst_id)
                 #if _int_dst_id >= 4000 and _int_dst_id <= 5000:
@@ -1570,7 +1572,7 @@ class routerHBP(HBSYSTEM):
                     for num in str(_int_dst_id):
                         _say.append(words[num])
      
-                speech = pkt_gen(bytes_3(5000), _nine, bytes_4(9), 1, _say)
+                speech = pkt_gen(bytes_3(5000), _nine, bytes_4(9), _slot, _say)
                 
                 #call speech in a thread as it contains sleep() and hence could block the reactor
                 reactor.callInThread(sendSpeech,self,speech)
@@ -1904,7 +1906,7 @@ if __name__ == '__main__':
         _map = voiceMap[CONFIG['GLOBAL']['ANNOUNCEMENT_LANGUAGE']]
         for _mapword in _map:
             logger.info('(AMBE) Mapping \"%s\" to \"%s\"',_mapword,_map[_mapword])
-            words[_mapword] = _map[_mapword]
+            words[_mapword] = words[_map[_mapword]]
 
     # HBlink instance creation
     logger.info('(GLOBAL) FreeDMR \'bridge_master.py\' -- SYSTEM STARTING...')
@@ -1912,10 +1914,30 @@ if __name__ == '__main__':
     
     listeningPorts = {}
     
+    generator = {}
+    systemdelete = []
+    for system in CONFIG['SYSTEMS']:
+        if CONFIG['SYSTEMS'][system]['ENABLED']:
+            if CONFIG['SYSTEMS'][system]['MODE'] == 'MASTER' and (CONFIG['SYSTEMS'][system]['GENERATOR'] > 1):
+                for count in range(CONFIG['SYSTEMS'][system]['GENERATOR']):
+                    _systemname = system+'-'+str(count)
+                    generator[_systemname] = CONFIG['SYSTEMS'][system].copy()
+                    generator[_systemname]['PORT'] = generator[_systemname]['PORT'] + count
+                    logger.debug('(GLOBAL) Generator - generated system %s',_systemname)
+                systemdelete.append(system)
+    
+    for _system in generator:
+        CONFIG['SYSTEMS'][_system] = generator[_system]
+    for _system in systemdelete:
+            CONFIG['SYSTEMS'].pop(_system)
+    
+    del generator
+    del systemdelete
+    
     for system in CONFIG['SYSTEMS']:
         if CONFIG['SYSTEMS'][system]['ENABLED']:
             if CONFIG['SYSTEMS'][system]['MODE'] == 'OPENBRIDGE':
-                systems[system] = routerOBP(system, CONFIG, report_server)
+                systems[system] = routerOBP(system, CONFIG, report_server)                
             else:
                 systems[system] = routerHBP(system, CONFIG, report_server)
             listeningPorts[system] = reactor.listenUDP(CONFIG['SYSTEMS'][system]['PORT'], systems[system], interface=CONFIG['SYSTEMS'][system]['IP'])
