@@ -1212,7 +1212,7 @@ class routerOBP(OPENBRIDGE):
                     self._report.send_bridgeEvent('GROUP VOICE,START,RX,{},{},{},{},{},{}'.format(self._system, int_id(_stream_id), int_id(_peer_id), int_id(_rf_src), _slot, int_id(_dst_id)).encode(encoding='utf-8', errors='ignore'))
 
             self.STATUS[_stream_id]['LAST'] = pkt_time
-            logger.debug('*** pkt_time: %s',pkt_time)
+            
             #Save this sequence number 
             self._lastSeq = _seq
             
