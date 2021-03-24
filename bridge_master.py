@@ -1241,6 +1241,17 @@ class routerOBP(OPENBRIDGE):
                 
                # Loop Control
                
+                #if 'LOOPHOLD' in self.STATUS[_stream_id]:
+                    #if self.STATUS[_stream_id]['LOOPHOLD'] < 5:
+                        #logger.debug ('(%s) Avoid packet due to loophold: %s',self._system,self.STATUS[_stream_id]['LOOPHOLD'])
+                        #self.STATUS[_stream_id]['LOOPHOLD'] = self.STATUS[_stream_id]['LOOPHOLD'] + 1
+                    #else:
+                        #try:
+                            #self.STATUS.pop('LOOPHOLD')
+                        #except:
+                            #pass
+                    #return
+               
                 for system in systems:                            
                     if system  == self._system:
                         continue
@@ -1253,7 +1264,7 @@ class routerOBP(OPENBRIDGE):
                                 self.STATUS[_stream_id]['LAST'] = pkt_time
                                 return
                     else:
-
+                        #if _stream_id in systems[system].STATUS and systems[system].STATUS[_stream_id]['START'] <= self.STATUS[_stream_id]['START']:
                         if _stream_id in systems[system].STATUS and '1ST' in systems[system].STATUS[_stream_id] and systems[system].STATUS[_stream_id]['TGID'] == _dst_id:
                             if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']:
                                 logger.warning("(%s) OBP LoopControl - system %s is first system for stream id: %s on TG %s, disgarding stream from this system",self._system, system, int_id(_stream_id), int_id(_dst_id))
