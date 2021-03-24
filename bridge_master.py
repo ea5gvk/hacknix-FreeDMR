@@ -1257,7 +1257,7 @@ class routerOBP(OPENBRIDGE):
                         continue
                     if CONFIG['SYSTEMS'][system]['MODE'] != 'OPENBRIDGE':
                         for _sysslot in systems[system].STATUS:
-                            if _stream_id == systems[system].STATUS[_sysslot]['RX_STREAM_ID']:
+                            if 'RX_STREAM_ID' in systems[system].STATUS[_sysslot] and _stream_id == systems[system].STATUS[_sysslot]['RX_STREAM_ID']:
                                 if 'LOOPLOG' not in self.STATUS[_stream_id] or not self.STATUS[_stream_id]['LOOPLOG']: 
                                     logger.warning("(%s) OBP LoopControl - call originated from HBP %s, stream id: %s, TG: %s, TS: %s, disgarding stream",self._system, system, int_id(_stream_id), int_id(_dst_id),_sysslot)
                                     self.STATUS[_stream_id]['LOOPLOG'] = True
