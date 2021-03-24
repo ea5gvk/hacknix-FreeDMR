@@ -37,6 +37,7 @@ from bitarray import bitarray
 from time import time,sleep
 import importlib.util
 import re
+import copy
 
 # Twisted is pretty important, so I keep it separate
 from twisted.internet.protocol import Factory, Protocol
@@ -133,8 +134,8 @@ def make_bridges(_rules):
         #    continue
         
         for _confsystem in CONFIG['SYSTEMS']:
-            if _confsystem[0:3] == 'OBP':
-            #if CONFIG['SYSTEMS'][system]['MODE'] == 'OPENBRIDGE':
+            #if _confsystem[0:3] == 'OBP':
+            if CONFIG['SYSTEMS'][_confsystem]['MODE'] != 'MASTER':
                 continue
             ts1 = False 
             ts2 = False
@@ -175,7 +176,7 @@ def make_single_bridge(_tgid,_sourcesystem,_slot,_tmout):
                 BRIDGES[_tgid_s].append({'SYSTEM': _system, 'TS': 1, 'TGID': _tgid,'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [_tgid,],'RESET': [], 'TIMER': time()})
                 BRIDGES[_tgid_s].append({'SYSTEM': _system, 'TS': 2, 'TGID': _tgid,'ACTIVE': False,'TIMEOUT': _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [_tgid,],'RESET': [], 'TIMER': time()})
                 
-        if _system[0:3] == 'OBP':
+        if _system[0:3] == 'OBP' and int_id(_tgid) >= 89:
             BRIDGES[_tgid_s].append({'SYSTEM': _system, 'TS': 1, 'TGID': _tgid,'ACTIVE': True,'TIMEOUT': '','TO_TYPE': 'NONE','OFF': [],'ON': [],'RESET': [], 'TIMER': time()})
         
 #Make static bridge - used for on-the-fly relay bridges
@@ -251,14 +252,14 @@ def make_single_reflector(_tgid,_tmout,_sourcesystem):
     _bridge = '#' + _tgid_s
     BRIDGES[_bridge] = []
     for _system in CONFIG['SYSTEMS']:
-        if _system[0:3] != 'OBP':
-        #if CONFIG['SYSTEMS'][system]['MODE'] == 'MASTER':
+        #if _system[0:3] != 'OBP':
+        if CONFIG['SYSTEMS'][_system]['MODE'] == 'MASTER':
             #_tmout = CONFIG['SYSTEMS'][_system]['DEFAULT_UA_TIMER']
             if _system == _sourcesystem:
                 BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 2, 'TGID': bytes_3(9),'ACTIVE': True,'TIMEOUT':  _tmout * 60,'TO_TYPE': 'ON','OFF': [],'ON': [_tgid,],'RESET': [], 'TIMER': time() + (_tmout * 60)})
             else:
                 BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 2, 'TGID': bytes_3(9),'ACTIVE': False,'TIMEOUT':  CONFIG['SYSTEMS'][_system]['DEFAULT_UA_TIMER'] * 60,'TO_TYPE': 'ON','OFF': [],'ON': [_tgid,],'RESET': [], 'TIMER': time()})
-        if _system[0:3] == 'OBP':
+        if _system[0:3] == 'OBP' and int_id(_tgid) >= 89:
             BRIDGES[_bridge].append({'SYSTEM': _system, 'TS': 1, 'TGID': _tgid,'ACTIVE': True,'TIMEOUT': '','TO_TYPE': 'NONE','OFF': [],'ON': [],'RESET': [], 'TIMER': time()})
         
 def remove_bridge_system(system):
@@ -418,7 +419,7 @@ def sendVoicePacket(self,pkt,_source_id,_dest_id,_slot):
     self.send_system(pkt)
     
 def sendSpeech(self,speech):
-    logger.info('(%s) Inside sendspeech thread',self._system)
+    logger.debug('(%s) Inside sendspeech thread',self._system)
     sleep(1)
     _nine = bytes_3(9)
     _source_id = bytes_3(5000)
@@ -432,12 +433,12 @@ def sendSpeech(self,speech):
         sleep(0.058)
         reactor.callFromThread(sendVoicePacket,self,pkt,_source_id,_nine,_slot)
 
-    logger.info('(%s) Sendspeech thread ended',self._system)
+    logger.debug('(%s) Sendspeech thread ended',self._system)
 
 def disconnectedVoice(system):
     _nine = bytes_3(9)
     _source_id = bytes_3(5000)
-    logger.info('(%s) Sending disconnected voice',system)
+    logger.debug('(%s) Sending disconnected voice',system)
     _say = [words['silence']]
     _say.append(words['silence']) 
     if CONFIG['SYSTEMS'][system]['DEFAULT_REFLECTOR'] > 0:
@@ -470,7 +471,7 @@ def disconnectedVoice(system):
         _stream_id = pkt[16:20]
         _pkt_time = time()
         reactor.callFromThread(sendVoicePacket,self,pkt,_source_id,_nine,_slot)
-        logger.info('(%s) disconnected voice thread end',system)
+        logger.debug('(%s) disconnected voice thread end',system)
     
 
 def threadIdent():
@@ -486,18 +487,24 @@ def ident():
         if CONFIG['SYSTEMS'][system]['MODE'] != 'MASTER':
             continue
         if CONFIG['SYSTEMS'][system]['VOICE_IDENT'] == True:
-           # if CONFIG['SYSTEMS'][system]['PEERS'] == False:
-            #    logger.debug('(%s) System has no peers, not sending ident',system)
-            #We only care about slot 2 - idents go out on slot 2
+            if CONFIG['SYSTEMS'][system]['MAX_PEERS'] > 1:
+                logger.debug("(IDENT) %s System has MAX_PEERS > 1, skipping",system)
+                continue
+            _callsign = False
+            for _peerid in CONFIG['SYSTEMS'][system]['PEERS']:
+                _callsign = CONFIG['SYSTEMS'][system]['PEERS'][_peerid]['CALLSIGN'].decode()
+            if not _callsign:
+                logger.debug("(IDENT) %s System has no peers or no recorded callsign (%s), skipping",system,_callsign)
+                continue
             _slot  = systems[system].STATUS[2]
             #If slot is idle for RX and TX
             #print("RX:"+str(_slot['RX_TYPE'])+" TX:"+str(_slot['TX_TYPE'])+" TIME:"+str(time() - _slot['TX_TIME']))
             if (_slot['RX_TYPE'] == HBPF_SLT_VTERM) and (_slot['TX_TYPE'] == HBPF_SLT_VTERM) and (time() - _slot['TX_TIME'] > CONFIG['SYSTEMS'][system]['GROUP_HANGTIME']):
                 #_stream_id = hex_str_4(1234567)
-                logger.info('(%s) Repeater idle. Sending voice ident',system)
+                logger.info('(%s) System idle. Sending voice ident',system)
                 _say = [words['silence']]
                 _say.append(words['silence'])
-                _systemcs = re.sub(r'\W+', '', system)
+                _systemcs = re.sub(r'\W+', '', _callsign)
                 _systemcs.upper()
                 for character in _systemcs:
                     _say.append(words[character])
@@ -531,6 +538,7 @@ def options_config():
         if CONFIG['SYSTEMS'][_system]['ENABLED'] == True:
             if 'OPTIONS' in CONFIG['SYSTEMS'][_system]:
                 _options = {}
+                CONFIG['SYSTEMS'][_system]['OPTIONS'] = CONFIG['SYSTEMS'][_system]['OPTIONS'].rstrip('\x00')
                 re.sub("\'","",CONFIG['SYSTEMS'][_system]['OPTIONS'])
                 re.sub("\"","",CONFIG['SYSTEMS'][_system]['OPTIONS'])
                 for x in CONFIG['SYSTEMS'][_system]['OPTIONS'].split(";"):
@@ -541,6 +549,63 @@ def options_config():
                         continue
                     _options[k] = v
                 logger.debug('(OPTIONS) Options found for %s',_system)
+                
+                if 'DIAL' in _options:
+                    _options['DEFAULT_REFLECTOR'] = _options.pop('DIAL')
+                if 'TIMER' in _options:
+                    _options['DEFAULT_UA_TIMER'] = _options.pop('TIMER')
+                if 'TS1' in _options:
+                    _options['TS1_STATIC'] = _options.pop('TS1')
+                if 'TS2' in _options:
+                    _options['TS2_STATIC'] = _options.pop('TS2')
+                    
+                #DMR+ style options
+                if 'StartRef' in _options:
+                    _options['DEFAULT_REFLECTOR'] = _options.pop('StartRef')
+                if 'RelinkTime' in _options:
+                    _options['DEFAULT_UA_TIMER'] = _options.pop('RelinkTime')
+                if 'TS1_1' in _options:
+                    _options['TS1_STATIC'] = _options.pop('TS1_1')
+                    if 'TS1_2' in _options:
+                        _options['TS1_STATIC'] = _options['TS1_STATIC'] + ',' + _options.pop('TS1_2')
+                    if 'TS1_3' in _options:
+                        _options['TS1_STATIC'] = _options['TS1_STATIC'] + ',' + _options.pop('TS1_3')
+                    if 'TS1_4' in _options:
+                        _options['TS1_STATIC'] = _options['TS1_STATIC'] + ',' + _options.pop('TS1_4')
+                    if 'TS1_4' in _options:
+                        _options['TS1_STATIC'] = _options['TS1_STATIC'] + ',' + _options.pop('TS1_5')
+                if 'TS2_2' in _options:
+                    _options['TS2_STATIC'] = _options.pop('TS2_1')
+                    if 'TS2_2' in _options:
+                        _options['TS2_STATIC'] = _options['TS2_STATIC'] + ',' + _options.pop('TS2_2')
+                    if 'TS2_3' in _options:
+                        _options['TS2_STATIC'] = _options['TS2_STATIC'] + ',' + _options.pop('TS2_3')
+                    if 'TS2_4' in _options:
+                        _options['TS2_STATIC'] = _options['TS2_STATIC'] + ',' + _options.pop('TS2_4')
+                    if 'TS2_4' in _options:
+                        _options['TS2_STATIC'] = _options['TS2_STATIC'] + ',' + _options.pop('TS2_5')
+                if 'UserLink' in _options:
+                    _options.pop('UserLink')
+                
+                if 'TS1_STATIC' not in _options:
+                    _options['TS1_STATIC'] = False
+                
+                if 'TS2_STATIC' not in _options:
+                    _options['TS2_STATIC'] = False
+                    
+                if 'DEFAULT_REFLECTOR' not in _options:
+                    _options['DEFAULT_REFLECTOR'] = 0
+                    
+                if 'DEFAULT_UA_TIMER' not in _options:
+                    _options['DEFAULT_UA_TIMER'] = CONFIG['SYSTEMS'][_system]['DEFAULT_UA_TIMER']
+                
+                if 'VOICE' in _options and (CONFIG['SYSTEMS'][_system]['VOICE_IDENT'] != bool(int(_options['VOICE']))):
+                    CONFIG['SYSTEMS'][_system]['VOICE_IDENT'] = bool(int(_options['VOICE']))
+                    logger.debug("(OPTIONS) %s - Setting voice ident to %s",_system,CONFIG['SYSTEMS'][_system]['VOICE_IDENT'])
+                    
+                if 'SINGLE' in _options and (CONFIG['SYSTEMS'][_system]['SINGLE_MODE'] != bool(int(_options['SINGLE']))):
+                    CONFIG['SYSTEMS'][_system]['SINGLE_MODE'] = bool(int(_options['SINGLE']))
+                    logger.debug("(OPTIONS) %s - Setting SINGLE_MODE to %s",_system,CONFIG['SYSTEMS'][_system]['SINGLE_MODE'])
                 
                 if 'TS1_STATIC' not in _options or 'TS2_STATIC' not in _options or 'DEFAULT_REFLECTOR' not in _options or 'DEFAULT_UA_TIMER' not in _options:
                     logger.debug('(OPTIONS) %s - Required field missing, ignoring',_system)
@@ -553,21 +618,21 @@ def options_config():
                     
                 if _options['TS1_STATIC']:
                     re.sub("\s","",_options['TS1_STATIC'])
-                    if re.search("![\d\,\.]",_options['TS1_STATIC']):
+                    if re.search("![\d\,]",_options['TS1_STATIC']):
                         logger.debug('(OPTIONS) %s - TS1_STATIC contains characters other than numbers and comma, ignoring',_system)
                         continue
                 
                 if _options['TS2_STATIC']:
                     re.sub("\s","",_options['TS2_STATIC'])
-                    if re.search("![\d\,\.]",_options['TS2_STATIC']):
+                    if re.search("![\d\,]",_options['TS2_STATIC']):
                         logger.debug('(OPTIONS) %s - TS2_STATIC contains characters other than numbers and comma, ignoring',_system)
                         continue
                 
-                if not _options['DEFAULT_REFLECTOR'].isdigit():
+                if isinstance(_options['DEFAULT_REFLECTOR'], str) and not _options['DEFAULT_REFLECTOR'].isdigit():
                     logger.debug('(OPTIONS) %s - DEFAULT_UA_TIMER is not an integer, ignoring',_system)
                     continue
                 
-                if not _options['DEFAULT_UA_TIMER'].isdigit():
+                if isinstance(_options['DEFAULT_UA_TIMER'], str) and not _options['DEFAULT_UA_TIMER'].isdigit():
                     logger.debug('(OPTIONS) %s - DEFAULT_REFLECTOR is not an integer, ignoring',_system)
                     continue
                     
@@ -809,6 +874,7 @@ def mysql_config_check(SQLGETCONFIG):
                 for _bridge in BRIDGES:
                     ts1 = False 
                     ts2 = False
+                    _tmout = CONFIG['SYSTEMS'][system][DEFAULT_UA_TIMER]
                     for i,e in enumerate(BRIDGES[_bridge]):
                         if e['SYSTEM'] == system and e['TS'] == 1:
                             ts1 = True
@@ -1695,7 +1761,7 @@ class routerHBP(HBSYSTEM):
 
                             # TGID matches an DE-ACTIVATION trigger
                             #Single TG mode
-                            if (CONFIG['SYSTEMS'][self._system]['SINGLE_MODE']) == True:
+                            if (CONFIG['SYSTEMS'][self._system]['MODE'] == 'MASTER' and CONFIG['SYSTEMS'][self._system]['SINGLE_MODE']) == True:
                                 if (_dst_id in _system['OFF']  or _dst_id in _system['RESET'] or _dst_id != _system['TGID']) and _slot == _system['TS']:
                                 #if (_dst_id in _system['OFF']  or _dst_id in _system['RESET']) and _slot == _system['TS']:
                                     # Set the matching rule as ACTIVE
@@ -1938,9 +2004,11 @@ if __name__ == '__main__':
             if CONFIG['SYSTEMS'][system]['MODE'] == 'MASTER' and (CONFIG['SYSTEMS'][system]['GENERATOR'] > 1):
                 for count in range(CONFIG['SYSTEMS'][system]['GENERATOR']):
                     _systemname = system+'-'+str(count)
-                    generator[_systemname] = CONFIG['SYSTEMS'][system].copy()
+                    generator[_systemname] = copy.deepcopy(CONFIG['SYSTEMS'][system])
                     generator[_systemname]['PORT'] = generator[_systemname]['PORT'] + count
+                    generator[_systemname]['_default_options'] = "TS1_STATIC={};TS2_STATIC={};SINGLE={};DEFAULT_UA_TIMER={};DEFAULT_REFLECTOR={};VOICE={}".format(generator[_systemname]['TS1_STATIC'],generator[_systemname]['TS2_STATIC'],int(generator[_systemname]['SINGLE_MODE']),generator[_systemname]['DEFAULT_UA_TIMER'],generator[_systemname]['DEFAULT_REFLECTOR'],int(generator[_systemname]['VOICE_IDENT']) )
                     logger.debug('(GLOBAL) Generator - generated system %s',_systemname)
+                    generator[_systemname]['_default_options']
                 systemdelete.append(system)
     
     for _system in generator:
@@ -1999,6 +2067,6 @@ if __name__ == '__main__':
         stat_trimmer.addErrback(loopingErrHandle)
     
     #more threads
-    reactor.suggestThreadPoolSize(500)
+    reactor.suggestThreadPoolSize(100)
     
     reactor.run()
