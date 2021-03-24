@@ -287,13 +287,13 @@ def rule_timer_loop():
                     _bridge_used = True
                     if _system['TIMER'] < _now:
                         _system['ACTIVE'] = False
-                        logger.info('(ROUTER) Conference Bridge TIMEOUT: DEACTIVATE System: %s, Bridge: %s, TS: %s, TGID: %s UA TIME: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']), _system['DEFAULT_UA_TIMER'])
+                        logger.info('(ROUTER) Conference Bridge TIMEOUT: DEACTIVATE System: %s, Bridge: %s, TS: %s, TGID: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']))
                         if _bridge[0:1] == '#':
                             reactor.callInThread(disconnectedVoice,_system['SYSTEM'])
                     else:
                         timeout_in = _system['TIMER'] - _now
                         _bridge_used = True
-                        logger.info('(ROUTER) Conference Bridge ACTIVE (ON timer running): System: %s Bridge: %s, TS: %s, TGID: %s, UA TIME: %s Timeout in: %.2fs,', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']), _system['DEFAULT_UA_TIMER'],timeout_in)
+                        logger.info('(ROUTER) Conference Bridge ACTIVE (ON timer running): System: %s Bridge: %s, TS: %s, TGID: %s, Timeout in: %.2fs,', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']),  timeout_in)
                 elif _system['ACTIVE'] == False:
                     logger.debug('(ROUTER) Conference Bridge INACTIVE (no change): System: %s Bridge: %s, TS: %s, TGID: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']))
             elif _system['TO_TYPE'] == 'OFF':
@@ -301,11 +301,11 @@ def rule_timer_loop():
                     if _system['TIMER'] < _now:
                         _system['ACTIVE'] = True
                         _bridge_used = True 
-                        logger.info('(ROUTER) Conference Bridge TIMEOUT: ACTIVATE System: %s, Bridge: %s, TS: %s, TGID: %s, UA TIME: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']), _system['DEFAULT_UA_TIMER'])
+                        logger.info('(ROUTER) Conference Bridge TIMEOUT: ACTIVATE System: %s, Bridge: %s, TS: %s, TGID: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']))
                     else:
                         timeout_in = _system['TIMER'] - _now
                         _bridge_used = True
-                        logger.info('(ROUTER) Conference Bridge INACTIVE (OFF timer running): System: %s Bridge: %s, TS: %s, TGID: %s, UA TIME: %s, Timeout in: %.2fs,', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']), _system['DEFAULT_UA_TIMER'], timeout_in)
+                        logger.info('(ROUTER) Conference Bridge INACTIVE (OFF timer running): System: %s Bridge: %s, TS: %s, TGID: %s, Timeout in: %.2fs,', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']),  timeout_in)
                 elif _system['ACTIVE'] == True:
                     _bridge_used = True
                     logger.debug('(ROUTER) Conference Bridge ACTIVE (no change): System: %s Bridge: %s, TS: %s, TGID: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']))
@@ -314,7 +314,7 @@ def rule_timer_loop():
                     _bridge_used = True
                 elif _system['SYSTEM'][0:3] == 'OBP' and _system['TO_TYPE'] == 'STAT':
                     _bridge_used = True
-                logger.debug('(ROUTER) Conference Bridge NO ACTION: System: %s, Bridge: %s, TS: %s, TGID: %s, UA TIME: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']), _system['DEFAULT_UA_TIMER'])
+                logger.debug('(ROUTER) Conference Bridge NO ACTION: System: %s, Bridge: %s, TS: %s, TGID: %s', _system['SYSTEM'], _bridge, _system['TS'], int_id(_system['TGID']))
                 
         if _bridge_used == False:
             _remove_bridges.append(_bridge)
