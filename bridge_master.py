@@ -1261,8 +1261,9 @@ class routerOBP(OPENBRIDGE):
 
             else:
                 
-                if '_fin' in self.STATUS[_stream_id]:
+                if '_fin' in self.STATUS[_stream_id] and '_finlog' not in self.STATUS[_stream_id]:
                    logger.warning("(%s) OBP *LoopControl* STREAM ID: %s ALREADY FINISHED FROM THIS SOURCE, IGNORING",self._system, int_id(_stream_id))
+                   self.STATUS[_stream_id]['_finlog'] = True
                    return
                
                # Loop Control
@@ -1285,6 +1286,11 @@ class routerOBP(OPENBRIDGE):
                                 logger.warning("(%s) OBP *LoopControl* FIRST OBP %s, STREAM ID: %s, TG %s, IGNORE THIS SOURCE",self._system, system, int_id(_stream_id), int_id(_dst_id))
                                 self.STATUS[_stream_id]['LOOPLOG'] = True
                             self.STATUS[_stream_id]['LAST'] = pkt_time
+                            
+                            if CONFIG['SYSTEMS'][system]['ENHANCED_OBP']:
+                                systems[system].send_bcsq(_tgid,_stream_id)
+                                logger.warning("(%s) OBP *LoopControl* Sent BCSQ to %s, STREAM ID: %s, TG %s",self._system, system, int_id(_stream_id), int_id(_dst_id))
+                                
                             return
 
 
