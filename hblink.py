@@ -220,7 +220,7 @@ class OPENBRIDGE(DatagramProtocol):
                 if _packet[:4] == BCKA:
                     #_data = _packet[:53]
                     _hash = _packet[4:]
-                    _ckhs = hmac_new(self._config['PASSPHRASE'],_packet,sha1).digest()
+                    _ckhs = hmac_new(self._config['PASSPHRASE'],_packet[:4],sha1).digest()
                     if compare_digest(_hash, _ckhs):
                         logger.debug('(%s) *BridgeControl* Keep Alive received',self._system)
                         self._config['_bcka'] = time()
