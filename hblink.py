@@ -136,7 +136,7 @@ class OPENBRIDGE(DatagramProtocol):
             
     def send_bcka(self):
         _packet = BCKA
-        _packet = b''.join([_packet[4:], (hmac_new(self._config['PASSPHRASE'],_packet,sha1).digest())])
+        _packet = b''.join([_packet[:4], (hmac_new(self._config['PASSPHRASE'],_packet,sha1).digest())])
         self.transport.write(_packet, (self._config['TARGET_IP'], self._config['TARGET_PORT']))
         logger.debug('(%s) *BridgeControl* sent Keep Alive',self._system)
         
