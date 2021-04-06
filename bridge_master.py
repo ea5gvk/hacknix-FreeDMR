@@ -1287,9 +1287,9 @@ class routerOBP(OPENBRIDGE):
                                 self.STATUS[_stream_id]['LOOPLOG'] = True
                             self.STATUS[_stream_id]['LAST'] = pkt_time
                             
-                            if CONFIG['SYSTEMS'][self._system]['ENHANCED_OBP']:
-                                systems[self._system].send_bcsq(_dst_id,_stream_id)
-                                logger.warning("(%s) OBP *BridgeControl* Sent BCSQ to %s, STREAM ID: %s, TG %s",self._system, system, int_id(_stream_id), int_id(_dst_id))
+                            #if CONFIG['SYSTEMS'][self._system]['ENHANCED_OBP']:
+                            systems[self._system].send_bcsq(_dst_id,_stream_id)
+                            logger.warning("(%s) OBP *BridgeControl* Sent BCSQ to %s, STREAM ID: %s, TG %s",self._system, system, int_id(_stream_id), int_id(_dst_id))
                                 
                             return
 
