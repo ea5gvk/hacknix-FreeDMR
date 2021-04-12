@@ -1072,7 +1072,7 @@ class routerOBP(OPENBRIDGE):
                     #We want to ignore this system and TS combination if it's called again for this packet
                     _sysIgnore.append((_target['SYSTEM'],_target['TS']))
         
-                    if ('_bcsq' in _target_system) and (_dst_id in _target_system['_bcsq']) and (_target_system['_bcsq'][_dst_id] == _stream_id)):
+                    if ('_bcsq' in _target_system) and (_dst_id in _target_system['_bcsq']) and (_target_system['_bcsq'][_dst_id] == _stream_id):
                         logger.info('(%s) Conference Bridge: %s, is Source Quenched for Stream ID: %s, skipping system: %s TS: %s, TGID: %s', self._system, _bridge, int_id(_stream_id), _target['SYSTEM'], _target['TS'], int_id(_target['TGID']))
                         continue
                         
