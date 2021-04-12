@@ -417,9 +417,13 @@ def stream_trimmer_loop():
                     if CONFIG['REPORTS']['REPORT']:
                             systems[system]._report.send_bridgeEvent('GROUP VOICE,END,RX,{},{},{},{},{},{},{:.2f}'.format(system, int_id(stream_id), int_id(_sysconfig['NETWORK_ID']), int_id(_stream['RFS']), 1, int_id(_stream['TGID']), _stream['LAST'] - _stream['START']).encode(encoding='utf-8', errors='ignore'))
                     removed = systems[system].STATUS.pop(stream_id)
-                for tgid in _sysconfig['_bcsq']:
-                    if sysconfig['_bcsq'][tgid] == stream_id:
-                        removed = sysconfig['_bcsq'].pop(tgid)
+                
+                    try:
+                        for tgid in _sysconfig['_bcsq']:
+                            if sysconfig['_bcsq'][tgid] == stream_id:
+                                removed = sysconfig['_bcsq'].pop(tgid)
+                    except KeyError:
+                        pass
                 else:
                     logger.error('(%s) Attemped to remove OpenBridge Stream ID %s not in the Stream ID list: %s', system, int_id(stream_id), [id for id in systems[system].STATUS])
 
